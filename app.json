@@ -21,10 +21,23 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.khushal99.privatepodcast"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "llama.rn"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d491d430-2a91-44a9-8549-c80d68f05327"
+      }
+    },
+    "scheme": "private-podcast"
   }
 }
