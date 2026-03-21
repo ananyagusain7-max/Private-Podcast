@@ -1,33 +1,61 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarStyle: {
+          backgroundColor: '#141728',
+          borderTopColor: '#2D3A5C',
+        },
+        tabBarActiveTintColor: '#8B5CF6',
+        tabBarInactiveTintColor: '#94A3B8',
+        headerStyle: {
+          backgroundColor: '#0D0F1A',
+        },
+        headerTintColor: '#FFFFFF',
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Library',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="headset" size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Import',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="add-circle" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="player"
+        options={{
+          title: 'Player',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="play-circle" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-sharp" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="modal"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
