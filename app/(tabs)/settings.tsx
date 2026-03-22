@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, Pressable,
-  StyleSheet, Animated, Switch, Alert,
+  StyleSheet, Animated, Alert,
 } from 'react-native';
 import ModelDownloader from '../../src/components/ModelDownloader';
 import { useModelStore, MODELS } from '../../src/stores/modelStore';
+import { useSettingsStore } from '../../src/stores/settingsStore';
+import { useLibraryStore } from '../../src/stores/libraryStore';
 import { theme } from '../../src/constants/theme';
 
 function SettingRow({
@@ -21,7 +23,7 @@ function SettingRow({
       onPressIn={() => onPress && Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, tension: 300, friction: 10 }).start()}
       onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 300, friction: 10 }).start()}
     >
-      <Animated.View style={[s.row, !isLast && s.rowBorder, { transform: [{ scale }] }]}>
+      <Animated.View style={[s.row, !isLast && s.rowBorder, { transform: [{ scale }] }]}> 
         <Text style={s.rowLabel}>{label}</Text>
         <View style={s.rowRight}>
           {rightElement ?? (
@@ -42,11 +44,27 @@ function SettingCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+const VOICE_OPTIONS = [
+  { id: 'kokoro-af_heart', name: 'Kokoro af_heart (Female)' },
+  { id: 'kokoro-am_adam', name: 'Kokoro am_adam (Male)' },
+  { id: 'kokoro-af_bella', name: 'Kokoro af_bella (Female)' },
+  { id: 'kokoro-af_nicole', name: 'Kokoro af_nicole (Female)' },
+  { id: 'kokoro-af_sky', name: 'Kokoro af_sky (Female)' },
+  { id: 'kokoro-am_michael', name: 'Kokoro am_michael (Male)' },
+];
+
 export default function SettingsScreen() {
   const [showModels, setShowModels] = useState(false);
   const screenAnim = useRef(new Animated.Value(0)).current;
   const activeModelId = useModelStore(s => s.activeModelId);
   const downloaded    = useModelStore(s => s.downloaded);
+  
+  const { 
+    scriptLength, pauseMs, host1VoiceId, host2VoiceId,
+    setScriptLength, setPauseMs, setHost1VoiceId, setHost2VoiceId 
+  } = useSettingsStore();
+  
+  const clearLibrary = useLibraryStore(s => s.clearLibrary);
 
   const activeModelName = activeModelId && MODELS[activeModelId]
     ? MODELS[activeModelId].name
@@ -58,16 +76,64 @@ export default function SettingsScreen() {
     Animated.timing(screenAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
   }, []);
 
+  const handleScriptLengthPress = () => {
+    Alert.alert('Script Length', 'Select preferred generation length', [
+      { text: 'Short (~10 turns)', onPress: () => setScriptLength('short') },
+      { text: 'Normal (~20 turns)', onPress: () => setScriptLength('normal') },
+      { text: 'Long (~40 turns)', onPress: () => setScriptLength('long') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handlePausePress = () => {
+    Alert.alert('Pause Duration', 'Delay between speaker turns', [
+      { text: 'None', onPress: () => setPauseMs(0) },
+      { text: 'Short (400ms)', onPress: () => setPauseMs(400) },
+      { text: 'Medium (800ms)', onPress: () => setPauseMs(800) },
+      { text: 'Long (1200ms)', onPress: () => setPauseMs(1200) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleVoicePress = (hostNum: 1 | 2) => {
+    Alert.alert(
+      `Host ${hostNum} Voice`,
+      'Select a voice for this speaker',
+      [
+        ...VOICE_OPTIONS.map(v => ({
+          text: v.name,
+          onPress: () => hostNum === 1 ? setHost1VoiceId(v.id) : setHost2VoiceId(v.id)
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleClearLibrary = () => {
+    Alert.alert('Clear library', 'Delete all generated episodes?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear All', style: 'destructive', onPress: async () => {
+        await clearLibrary();
+        Alert.alert('Library Cleared');
+      }},
+    ]);
+  };
+
+  const getVoiceName = (id?: string) => {
+    const found = VOICE_OPTIONS.find(v => v.id === id);
+    return found ? found.name : 'Default';
+  };
+
   return (
-    <Animated.View style={[s.screen, { opacity: screenAnim }]}>
-      <View style={s.header}>
+    <Animated.View style={[s.screen, { opacity: screenAnim }]}> 
+      <View style={s.header}> 
         <Text style={s.eyebrow}>PREFERENCES</Text>
         <Text style={s.title}>Settings</Text>
       </View>
 
-      <ScrollView contentContainerStyle={s.body}>
+      <ScrollView contentContainerStyle={s.body}>  
 
-        {/* Model */}
+        {/* Model */}  
         <Text style={s.sectionLabel}>AI MODEL</Text>
         <SettingCard>
           <SettingRow
@@ -76,7 +142,7 @@ export default function SettingsScreen() {
           />
           <SettingRow
             label="Downloaded"
-            value={`${downloadedCount} of ${Object.keys(MODELS).length}`}
+            value={`${downloadedCount} of ${Object.keys(MODELS).length}`} 
           />
           <SettingRow
             label="Manage models"
@@ -85,38 +151,42 @@ export default function SettingsScreen() {
           />
         </SettingCard>
 
-        {/* Generation */}
+        {/* Generation */}  
         <Text style={s.sectionLabel}>GENERATION</Text>
         <SettingCard>
           <SettingRow
             label="Script length"
-            value="Normal (20 turns)"
+            value={scriptLength.charAt(0).toUpperCase() + scriptLength.slice(1)}
+            onPress={handleScriptLengthPress}
           />
           <SettingRow
             label="Pause between turns"
-            value="400ms"
+            value={`${pauseMs}ms`}
+            onPress={handlePausePress}
             isLast
           />
         </SettingCard>
 
-        {/* Voice */}
+        {/* Voice */}  
         <Text style={s.sectionLabel}>VOICES</Text>
         <SettingCard>
           <SettingRow
             label="HOST1 voice"
-            value="Kokoro af_heart"
+            value={getVoiceName(host1VoiceId)}
+            onPress={() => handleVoicePress(1)}
           />
           <SettingRow
             label="HOST2 voice"
-            value="Kokoro am_adam"
+            value={getVoiceName(host2VoiceId)}
+            onPress={() => handleVoicePress(2)}
             isLast
           />
         </SettingCard>
 
-        {/* Privacy */}
+        {/* Privacy */}  
         <Text style={s.sectionLabel}>PRIVACY</Text>
-        <View style={s.privacyCard}>
-          <View style={s.privacyRow}>
+        <View style={s.privacyCard}>  
+          <View style={s.privacyRow}>  
             <View style={s.privacyDot} />
             <Text style={s.privacyTitle}>100% on-device processing</Text>
           </View>
@@ -126,7 +196,7 @@ export default function SettingsScreen() {
           <Text style={s.privacyLine}>· No accounts, no tracking, no telemetry</Text>
         </View>
 
-        {/* App */}
+        {/* App */}  
         <Text style={s.sectionLabel}>APP</Text>
         <SettingCard>
           <SettingRow
@@ -135,10 +205,7 @@ export default function SettingsScreen() {
           />
           <SettingRow
             label="Clear episode library"
-            onPress={() => Alert.alert('Clear library', 'Delete all episodes?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Clear', style: 'destructive' },
-            ])}
+            onPress={handleClearLibrary}
             isLast
           />
         </SettingCard>
