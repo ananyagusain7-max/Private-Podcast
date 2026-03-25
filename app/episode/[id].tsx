@@ -34,9 +34,13 @@ export default function EpisodeDetailScreen() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive',
-        onPress: () => {
-          useLibraryStore.getState().removeEpisode(episode!.id);
-          router.back();
+        onPress: async () => {
+          try {
+            await useLibraryStore.getState().removeEpisode(episode!.id);
+            router.back();
+          } catch (e) {
+            Alert.alert('Delete failed', e instanceof Error ? e.message : 'Could not delete episode');
+          }
         },
       },
     ]);

@@ -47,10 +47,6 @@ function SettingCard({ children }: { children: React.ReactNode }) {
 const VOICE_OPTIONS = [
   { id: 'kokoro-af_heart', name: 'Kokoro af_heart (Female)' },
   { id: 'kokoro-am_adam', name: 'Kokoro am_adam (Male)' },
-  { id: 'kokoro-af_bella', name: 'Kokoro af_bella (Female)' },
-  { id: 'kokoro-af_nicole', name: 'Kokoro af_nicole (Female)' },
-  { id: 'kokoro-af_sky', name: 'Kokoro af_sky (Female)' },
-  { id: 'kokoro-am_michael', name: 'Kokoro am_michael (Male)' },
 ];
 
 export default function SettingsScreen() {
@@ -80,7 +76,7 @@ export default function SettingsScreen() {
     Alert.alert('Script Length', 'Select preferred generation length', [
       { text: 'Short (~10 turns)', onPress: () => setScriptLength('short') },
       { text: 'Normal (~20 turns)', onPress: () => setScriptLength('normal') },
-      { text: 'Long (~40 turns)', onPress: () => setScriptLength('long') },
+      { text: 'Long (~30 turns)', onPress: () => setScriptLength('long') },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };

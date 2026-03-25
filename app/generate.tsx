@@ -20,7 +20,7 @@ function PulsingDot() {
   const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.parallel([
         Animated.sequence([
           Animated.timing(scale,   { toValue: 1.5, duration: 700, useNativeDriver: true }),
@@ -31,7 +31,9 @@ function PulsingDot() {
           Animated.timing(opacity, { toValue: 1,   duration: 700, useNativeDriver: true }),
         ]),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   return (

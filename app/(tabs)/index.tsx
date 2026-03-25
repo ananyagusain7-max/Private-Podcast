@@ -77,7 +77,7 @@ function PulsingOrb() {
   const opacity = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.parallel([
         Animated.sequence([
           Animated.timing(scale,   { toValue: 1.15, duration: 1600, useNativeDriver: true }),
@@ -88,7 +88,9 @@ function PulsingOrb() {
           Animated.timing(opacity, { toValue: 0.5, duration: 1600, useNativeDriver: true }),
         ]),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   return (
@@ -192,12 +194,14 @@ function GlowButton({ label, onPress }: { label: string; onPress: () => void }) 
   const glowAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, { toValue: 1,   duration: 1400, useNativeDriver: true }),
         Animated.timing(glowAnim, { toValue: 0.4, duration: 1400, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   return (
@@ -219,12 +223,14 @@ function GlowFAB({ onPress }: { onPress: () => void }) {
   const glowAnim = useRef(new Animated.Value(0.5)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, { toValue: 1,   duration: 1600, useNativeDriver: true }),
         Animated.timing(glowAnim, { toValue: 0.5, duration: 1600, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   return (

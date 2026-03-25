@@ -50,12 +50,14 @@ export default function ImportScreen() {
 
   useEffect(() => {
     Animated.timing(screenAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(btnGlow, { toValue: 1,   duration: 1400, useNativeDriver: true }),
         Animated.timing(btnGlow, { toValue: 0.4, duration: 1400, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   function handleGenerate() {

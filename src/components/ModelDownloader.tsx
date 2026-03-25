@@ -24,7 +24,10 @@ function getModelsDir(): string {
 }
 
 function getModelPath(id: string): string {
-  return getModelsDir() + id + '.gguf';
+  const url = MODELS[id as ModelId]?.url ?? '';
+  const extMatch = url.match(/\.([a-z0-9]+)(?:\?|$)/i);
+  const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : '.bin';
+  return getModelsDir() + id + ext;
 }
 
 function formatBytes(bytes: number): string {
@@ -50,7 +53,8 @@ export default function ModelDownloader({ visible, onClose }: Props) {
     (async () => {
       for (const id of Object.keys(MODELS)) {
         if (isDownloaded(id as ModelId)) {
-          const path = getModelPath(id);
+          const entry = downloaded[id];
+          const path = entry?.localUri || getModelPath(id);
           try {
             const info = await FileSystem.getInfoAsync(path);
             if (info.exists) {
@@ -67,7 +71,7 @@ export default function ModelDownloader({ visible, onClose }: Props) {
         }
       }
     })();
-  }, [visible]);
+  }, [visible, downloaded, isDownloaded, removeModel, setRow]);
 
   async function startDownload(id: ModelId) {
     const model = MODELS[id];

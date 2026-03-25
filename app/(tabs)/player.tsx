@@ -82,12 +82,14 @@ export default function PlayerScreen() {
 
   useEffect(() => {
     if (isPlaying) {
-      Animated.loop(
+      const loop = Animated.loop(
         Animated.sequence([
           Animated.timing(playGlow, { toValue: 0.9, duration: 1200, useNativeDriver: true }),
           Animated.timing(playGlow, { toValue: 0.4, duration: 1200, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      loop.start();
+      return () => loop.stop();
     } else {
       playGlow.stopAnimation();
       Animated.timing(playGlow, { toValue: 0.4, duration: 300, useNativeDriver: true }).start();

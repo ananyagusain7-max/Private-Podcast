@@ -1,8 +1,4 @@
-import TrackPlayer, {
-  AppKilledPlaybackBehavior,
-  Capability,
-  State,
-} from 'react-native-track-player';
+import { Audio, type AVPlaybackStatus } from 'expo-av';
 
 type EpisodeForPlayback = {
   id: string;
@@ -12,6 +8,7 @@ type EpisodeForPlayback = {
 
 let isSetup = false;
 let loadedTrackId: string | null = null;
+let currentSound: Audio.Sound | null = null;
 
 function normalizeAudioUri(pathOrUri: string): string {
   if (pathOrUri.startsWith('file://')) return pathOrUri;
@@ -22,20 +19,11 @@ function normalizeAudioUri(pathOrUri: string): string {
 async function ensurePlayer(): Promise<void> {
   if (isSetup) return;
 
-  await TrackPlayer.setupPlayer();
-  await TrackPlayer.updateOptions({
-    android: {
-      appKilledPlaybackBehavior: AppKilledPlaybackBehavior.PausePlayback,
-    },
-    capabilities: [
-      Capability.Play,
-      Capability.Pause,
-      Capability.SeekTo,
-      Capability.JumpForward,
-      Capability.JumpBackward,
-      Capability.Stop,
-    ],
-    compactCapabilities: [Capability.Play, Capability.Pause],
+  await Audio.setAudioModeAsync({
+    staysActiveInBackground: false,
+    playsInSilentModeIOS: true,
+    shouldDuckAndroid: true,
+    playThroughEarpieceAndroid: false,
   });
 
   isSetup = true;
@@ -52,35 +40,65 @@ async function ensureLoadedTrack(episode: EpisodeForPlayback): Promise<void> {
     return;
   }
 
-  await TrackPlayer.reset();
-  await TrackPlayer.add({
-    id: episode.id,
-    title: episode.title,
-    artist: 'Private Podcast',
-    url: normalizeAudioUri(episode.mp3Path),
-  });
+  if (currentSound) {
+    await currentSound.unloadAsync();
+    currentSound = null;
+  }
+
+  const { sound } = await Audio.Sound.createAsync(
+    { uri: normalizeAudioUri(episode.mp3Path) },
+    { shouldPlay: false }
+  );
+
+  currentSound = sound;
 
   loadedTrackId = episode.id;
 }
 
 export async function playEpisode(episode: EpisodeForPlayback): Promise<void> {
   await ensureLoadedTrack(episode);
-  await TrackPlayer.play();
+  if (!currentSound) return;
+  await currentSound.playAsync();
 }
 
 export async function pausePlayback(): Promise<void> {
   await ensurePlayer();
-  await TrackPlayer.pause();
+  if (!currentSound) return;
+  await currentSound.pauseAsync();
 }
 
 export async function setPlaybackSpeed(speed: number): Promise<void> {
   await ensurePlayer();
-  await TrackPlayer.setRate(speed);
+  if (!currentSound) return;
+  await currentSound.setRateAsync(speed, false);
 }
 
 export async function seekBy(offsetSeconds: number): Promise<void> {
   await ensurePlayer();
-  await TrackPlayer.seekBy(offsetSeconds);
+  if (!currentSound) return;
+
+  const status = await currentSound.getStatusAsync();
+  if (!status.isLoaded) return;
+
+  const duration = status.durationMillis ?? 0;
+  const nextPosition = Math.max(0, Math.min(status.positionMillis + offsetSeconds * 1000, duration || Number.MAX_SAFE_INTEGER));
+  await currentSound.setPositionAsync(nextPosition);
+}
+
+function toSnapshot(status: AVPlaybackStatus): {
+  position: number;
+  duration: number;
+  isPlaying: boolean;
+} {
+  if (!status.isLoaded) {
+    return { position: 0, duration: 0, isPlaying: false };
+  }
+
+  return {
+    position: (status.positionMillis ?? 0) / 1000,
+    duration: (status.durationMillis ?? 0) / 1000,
+    isPlaying: Boolean(status.isPlaying),
+  };
 }
 
 export async function getPlaybackSnapshot(): Promise<{
@@ -90,17 +108,10 @@ export async function getPlaybackSnapshot(): Promise<{
 }> {
   await ensurePlayer();
 
-  const [progress, playbackState] = await Promise.all([
-    TrackPlayer.getProgress(),
-    TrackPlayer.getPlaybackState(),
-  ]);
+  if (!currentSound) {
+    return { position: 0, duration: 0, isPlaying: false };
+  }
 
-  const state = playbackState.state;
-  const isPlaying = state === State.Playing || state === State.Buffering;
-
-  return {
-    position: progress.position ?? 0,
-    duration: progress.duration ?? 0,
-    isPlaying,
-  };
+  const status = await currentSound.getStatusAsync();
+  return toSnapshot(status);
 }
